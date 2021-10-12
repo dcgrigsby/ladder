@@ -24,6 +24,14 @@ begin
 	using TimeZones
 end
 
+# ╔═╡ 58888548-00ee-4236-a4b5-b77c55e77cb6
+"""
+TODOS
+-Should have, at most, 4 decimal points - so there's a bug
+-Think there's a bug when have buy/sell overlap
+-Think about transactions/flag - do I care? Probably - so have transaction variabl
+""";
+
 # ╔═╡ 78bf79f6-00a9-4e49-bb9d-6990cae20863
 md"""
 **Symbol** $(@bind symbol TextField(default="SPY"))
@@ -121,7 +129,7 @@ $(Dates.format(to_display, "I:MM")).**
 
 # ╔═╡ 92e4bafc-7369-4831-8260-88c261edc9ea
 function state(symbol_matrix, from, to, state=Dict())	
-	for n in from:1:to
+	for n in from:to
 		timestamp, size, price, side = symbol_matrix[n, :]
 
 		if haskey(state, price) # price already present 
@@ -145,7 +153,33 @@ initial_state = state(symbol_matrix, 1, from_cursor);
 tick; begin
 	tick_cursor = seek(symbol_matrix, from + Dates.Second(tick), from_cursor)
 	current_state = state(symbol_matrix, from_cursor, tick_cursor, initial_state)
-	current_state
+	
+	ladder = []
+	for key in sort(collect(keys(current_state)))
+		if current_state[key][2] == "buy"
+			push!(ladder, (current_state[key][1], key, ""))	
+		else
+			push!(ladder, ("", key, current_state[key][1]))				
+		end
+	end
+	
+	trs = ""
+	for (buy, price, sell) in ladder 
+		trs *= "<tr><td>$(buy)</td><td>$(price)</td><td>$(sell)</td></tr>\n"
+	end
+	
+	current_datetime = from_display + Dates.Second(tick)
+	HTML(
+		"""
+		<center>
+			<b>$(Dates.format(current_datetime, "mm-dd-yy I:MM:SS"))</b>
+		</center>
+		<table>
+			<tr><th>buy</th><th>price</th><th>sell</th></tr>
+			$(trs)
+		</table>
+		"""
+	)	
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -574,8 +608,9 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 """
 
 # ╔═╡ Cell order:
+# ╠═58888548-00ee-4236-a4b5-b77c55e77cb6
 # ╟─78bf79f6-00a9-4e49-bb9d-6990cae20863
-# ╠═635b154d-422c-4eda-a243-b450606bed60
+# ╟─635b154d-422c-4eda-a243-b450606bed60
 # ╟─4213820d-cef3-4dcf-af2f-3b5c259bfe01
 # ╟─72ea1523-1474-4b76-a6b3-35e170074909
 # ╠═4c7841be-ea4a-4b78-9ede-accfb286d850
